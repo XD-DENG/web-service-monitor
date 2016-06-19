@@ -1,17 +1,14 @@
 library(shiny)
 library(shinydashboard)
 library(httr)
+library(plotly)
 
 
 
 ui <- dashboardPage(
   dashboardHeader(title = "Web Service Monitor"),
   
-  dashboardSidebar(
-    br(),
-    br(),
-    textInput("url_to_monitor", "Enter the URL to Monitor:")
-  ),
+  dashboardSidebar(disable = TRUE),
   
   dashboardBody(
     
@@ -22,14 +19,14 @@ ui <- dashboardPage(
                strong(textOutput("url_monitoring")), 
                height = 80,
                width = 4
+             ),
+             box(
+               title = "Check Interval",
+               status = "primary",
+               strong(textOutput("checking_interval")),
+               height = 80,
+               width = 3
              )
-             # box(
-             #   title = "Check Interval", 
-             #   status = "primary", 
-             #   strong(textOutput("checking_interval")), 
-             #   height = 80,
-             #   width = 3
-             # )
     ),
     
     fluidRow(
@@ -37,7 +34,9 @@ ui <- dashboardPage(
       # Dynamic valueBoxes
       infoBoxOutput("url_working_or_not"),
       infoBoxOutput("respond_time")
-    )
+    ),
+    
+    plotlyOutput("trendPlot")
 
   )
 )
@@ -52,23 +51,27 @@ ui <- dashboardPage(
 
 server <- function(input, output, session) {
   
+  current_check_result <- reactiveFileReader(1000,
+                                             session,
+                                             "current_check_result",
+                                             readLines)
+
+  
   output$url_monitoring <- renderText({
-    input$url_to_monitor
+    current_check_result()[4]
   })
   
   output$checking_interval <- renderText({
-    input$checking_interval
+    paste(current_check_result()[5],
+          "seconds")
   })
   
   
-  check_result <- reactive({
-    try(GET(input$url_to_monitor))
-  })
   
 
   
   output$url_working_or_not <- renderInfoBox({
-    if(class(check_result()) == "try-error"){
+    if(current_check_result()[1] == "try-error"){
       infoBox(
         "Service Availability",
         div("Service NOT Available", style="color:red"),
@@ -76,7 +79,7 @@ server <- function(input, output, session) {
         color = "red"
       )
     } else {
-      if(check_result()$status_code == 200){
+      if(current_check_result()[2] == 200){
         infoBox(
           "Service Availability",
           div("Healthy",  style = "color:green"),
@@ -98,7 +101,7 @@ server <- function(input, output, session) {
   
   
   output$respond_time <- renderInfoBox({
-    if(class(check_result()) == "try-error"){
+    if(current_check_result()[1] == "try-error"){
       infoBox(
         "response time (second)",
         "No Response",
@@ -107,20 +110,34 @@ server <- function(input, output, session) {
       )
 
     } else {
-      if(check_result()$status_code == 200){
+      if(current_check_result()[2] == 200){
         infoBox(
           "response time (second)",
-          check_result()$times["total"],
+          current_check_result()[3],
           color = "green"
         )
       }else{
         infoBox(
           "response time (second)",
-          check_result()$times["total"],
+          current_check_result()[3],
           color = "orange"
         )
       }
     }
+  })
+  
+  
+  trend_plot_dat <- reactiveFileReader(1000,
+                                       session,
+                                       "response_time_recording.csv",
+                                       read.csv)
+  
+  output$trendPlot <- renderPlotly({
+    dat <- trend_plot_dat()
+    p <- plot_ly(dat, x = timestamp, y = responsetime)
+    layout(p, title="Response Time Trend",
+           xaxis = list(title = "Timestamp",  autorange = T),
+           yaxis = list(title = "Response Time (second)",  autorange = T))
   })
   
 
