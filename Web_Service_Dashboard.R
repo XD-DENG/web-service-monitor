@@ -67,20 +67,12 @@ ui <- dashboardPage(
     fluidRow(
       column(1,br()),
       column(10,
-             plotlyOutput("trendPlot_treaming", height = 260)
+             plotlyOutput("trendPlot", height = 600)
              ),
       column(1,br())
     ),
     
-    br(),
-    
-    fluidRow(
-      column(1,br()),
-      column(10,
-             plotlyOutput("trendPlot_historical", height = 260)
-      ),
-      column(1,br())
-    )
+    br()
     
 
 
@@ -293,29 +285,25 @@ server <- function(input, output, session) {
                                        logfilename,
                                        read.csv)
   
-  output$trendPlot_treaming <- renderPlotly({
+  output$trendPlot <- renderPlotly({
     dat <- try(trend_plot_dat())
     if(class(dat) == "try-error"){
       return(NULL)
     }
-    p <- plot_ly(tail(dat, 100), # only display the newest 100 results. This is somehow a "streaming"
-                 x = timestamp, y = responsetime)
-    layout(p, title="Response Time Trend (Treaming)",
-           xaxis = list(title = "Timestamp",  autorange = T),
-           yaxis = list(title = "Response Time (second)",  autorange = T))
+    
+    
+    p <- subplot(
+      p_1 <- plot_ly(tail(dat, 100), # only display the newest 100 results. This is somehow a "streaming"
+                   x = timestamp, y = responsetime),
+      
+      p_2 <- plot_ly(dat,
+                   x = timestamp, y = responsetime, color = "green"),
+      margin = 0.05,
+      nrows=2
+    ) %>% layout(showlegend = FALSE)
+    p
   })
   
-  output$trendPlot_historical <- renderPlotly({
-    dat <- try(trend_plot_dat())
-    if(class(dat) == "try-error"){
-      return(NULL)
-    }
-    p <- plot_ly(dat,
-                 x = timestamp, y = responsetime, color = "green")
-    layout(p, title="Response Time Trend (Complete)",
-           xaxis = list(title = "Timestamp",  autorange = T),
-           yaxis = list(title = "Response Time (second)",  autorange = T))
-  })
   
   
   
