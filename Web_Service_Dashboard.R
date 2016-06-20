@@ -23,7 +23,7 @@ ui <- dashboardPage(
               value = strsplit(scan("configuration", what="char")[1], split = "@")[[1]][2]),
     br(),
     numericInput("check_interval", "Checking Interval (second)",
-                 value = 5, min = 5, step = 5),
+                 value = 20, min = 10, step = 10),
     br(),
     actionButton("refresh", "Refresh Setting")
   ),
@@ -245,13 +245,13 @@ server <- function(input, output, session) {
       if(current_check_result()[2] == 200){
         infoBox(
           "response time (second)",
-          current_check_result()[3],
+          round(as.numeric(current_check_result()[3]), 3),
           color = "green"
         )
       }else{
         infoBox(
           "response time (second)",
-          current_check_result()[3],
+          round(as.numeric(current_check_result()[3]), 3),
           color = "orange"
         )
       }
@@ -298,7 +298,7 @@ server <- function(input, output, session) {
     if(class(dat) == "try-error"){
       return(NULL)
     }
-    p <- plot_ly(tail(dat, 20), # only display the newest 20 results. This is somehow a "streaming"
+    p <- plot_ly(tail(dat, 100), # only display the newest 100 results. This is somehow a "streaming"
                  x = timestamp, y = responsetime)
     layout(p, title="Response Time Trend (Treaming)",
            xaxis = list(title = "Timestamp",  autorange = T),
@@ -330,7 +330,7 @@ server <- function(input, output, session) {
   output$max_past_100 <- renderInfoBox({
     infoBox(
       "Max response time (second)",
-      max(tail(trend_plot_dat(), 100)$responsetime),
+      round(max(tail(trend_plot_dat(), 100)$responsetime), 3),
       color = "blue"
     )
   })
@@ -338,7 +338,7 @@ server <- function(input, output, session) {
   output$min_past_100 <- renderInfoBox({
     infoBox(
       "Min response time (second)",
-      min(tail(trend_plot_dat(), 100)$responsetime),
+      round(min(tail(trend_plot_dat(), 100)$responsetime), 3),
       color = "blue"
     )
   })
