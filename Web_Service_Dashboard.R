@@ -25,7 +25,10 @@ ui <- dashboardPage(
     numericInput("check_interval", "Checking Interval (second)",
                  value = 20, min = 10, step = 10),
     br(),
-    actionButton("refresh", "Refresh Setting")
+    actionButton("refresh_setting", "Refresh Setting"),
+    br(),
+    br(),
+    actionButton("refresh_data", "Clear Data")
   ),
   
   dashboardBody(
@@ -46,7 +49,8 @@ ui <- dashboardPage(
                width = 3
              ),
              # help the refresh button work
-             textOutput("refresh_result")
+             textOutput("refresh_setting_result"),
+             textOutput("refresh_data_result")
     ),
     
     fluidRow(
@@ -108,7 +112,7 @@ server <- function(input, output, session) {
   monitor_log_writer <- observe({
     
     check_interval <- as.numeric(strsplit(scan(file = "configuration", what="char", quiet = TRUE)[2], split = "@")[[1]][2])
-    invalidateLater(1000*check_interval, session)
+    
     
     # Clear the log file if it exist
     if(file.exists(logfilename)){
@@ -156,6 +160,8 @@ server <- function(input, output, session) {
       response_time_recording <<- rbind(response_time_recording, temp_result)
     }
     write.csv(response_time_recording, file = logfilename)
+    
+    invalidateLater(1000*check_interval, session)
     
   })
   
@@ -254,24 +260,35 @@ server <- function(input, output, session) {
   
   
   
-  refresh_action <- eventReactive(input$refresh, {
+  refresh_setting_action <- eventReactive(input$refresh_setting, {
     cat(paste("url_to_monitor@",
               input$url_to_monitor,
               "\n",
               "check_interval(seconds)@",
               input$check_interval,
+              "\n",
               sep=""),
         file="configuration")
     
-    # Refresh the "response recording" data frame so that the logging can restart
-    response_time_recording <<- data.frame(timestamp = NULL,
-                                          responsetime = NULL)
     
     paste("Setting Refreshed at:", as.character(Sys.time()))
   })
   
-  output$refresh_result <- renderText({
-    refresh_action()
+  output$refresh_setting_result <- renderText({
+    refresh_setting_action()
+  })
+  
+  refresh_data_action <- eventReactive(input$refresh_data, {
+    
+    # Refresh the "response recording" data frame so that the logging can restart
+    response_time_recording <<- data.frame(timestamp = NULL,
+                                           responsetime = NULL)
+    
+    paste("Data cleared at:", as.character(Sys.time()))
+  })
+  
+  output$refresh_data_result <- renderText({
+    refresh_data_action()
   })
   
   
@@ -294,13 +311,17 @@ server <- function(input, output, session) {
     
     p <- subplot(
       p_1 <- plot_ly(tail(dat, 100), # only display the newest 100 results. This is somehow a "streaming"
-                   x = timestamp, y = responsetime),
+                   x = timestamp, 
+                   y = responsetime,
+                   name = "Streaming (last 100 requests)"),
       
       p_2 <- plot_ly(dat,
-                   x = timestamp, y = responsetime, color = "green"),
+                   x = timestamp, 
+                   y = responsetime, 
+                   name="Historical (since start)"),
       margin = 0.05,
       nrows=2
-    ) %>% layout(showlegend = FALSE)
+    ) %>% layout(showlegend = TRUE)
     p
   })
   
