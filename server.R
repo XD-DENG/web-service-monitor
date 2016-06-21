@@ -268,7 +268,7 @@ shinyServer(function(input, output, session) {
   
   output$play_alarm_sound <- renderUI({
     if(current_check_result()[1] == "try-error" | current_check_result()[2] != 200)
-    tags$audio(src = "alarm.mp3", type = "audio/mp3", autoplay = NA, controls = NA)
+    tags$audio(src = "alarm.mp3", type = "audio/mp3", autoplay = NA, controls = NA, style="display:none;")
   })
   
 
