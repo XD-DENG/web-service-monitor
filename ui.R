@@ -61,18 +61,30 @@ shinyUI(dashboardPage(
       infoBoxOutput("respond_time")
     ),
     
-    h3("During the Last 100 Requests"),
     
     fluidRow(
-      infoBoxOutput("mean_past_100"),
-      infoBoxOutput("max_past_100"),
-      infoBoxOutput("min_past_100")
+      column(1," "),
+      column(12,
+      box(
+        title = "During the Last 100 Requests", status = "primary", solidHeader = TRUE, width=12,
+        infoBoxOutput("mean_past_100"),
+        infoBoxOutput("max_past_100"),
+        infoBoxOutput("min_past_100")
+      )
+      ),
+      column(1," ")
     ),
     
+    
     fluidRow(
-      column(1,br()),
-      column(10,
-             plotlyOutput("trendPlot", height = 600)
+      column(1,"  "),
+      column(12,
+             box(
+               title = "Trend of Response Time", status = "primary", solidHeader = TRUE,
+               collapsible = FALSE,
+               plotlyOutput("trendPlot", height = 600),
+               width = 12
+             )
       ),
       column(1,br())
     ),
