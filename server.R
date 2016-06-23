@@ -223,16 +223,30 @@ shinyServer(function(input, output, session) {
     }
     
     
-    p <- subplot(
-      p_1 <- plot_ly(tail(dat, 100), # only display the newest 100 results. This is somehow a "streaming"
-                     x = timestamp, 
-                     y = responsetime,
-                     name = "Streaming (last 100 requests)"),
-      
+    p_1 <- plot_ly(tail(dat, 100), # only display the newest 100 results. This is somehow a "streaming"
+                   x = timestamp, 
+                   y = responsetime,
+                   name = "Streaming (last 100 requests)")
+    
+    if(dim(dat)[1]>100){
       p_2 <- plot_ly(dat,
                      x = timestamp, 
                      y = responsetime, 
-                     name="Historical (since start)"),
+                     name="Historical (since start)") %>% add_trace(x=rep(tail(dat$timestamp, 100)[1], 2), 
+                                                                    y=c(min(dat$responsetime), max(dat$responsetime)), 
+                                                                    line = list(width=0.8),
+                                                                    name="The last 100th request")
+    } else {
+      p_2 <- plot_ly(dat,
+                     x = timestamp, 
+                     y = responsetime, 
+                     name="Historical (since start)")
+    }
+    
+    
+    p <- subplot(
+      p_1,
+      p_2,
       margin = 0.05,
       nrows=2
     ) %>% layout(showlegend = TRUE)
