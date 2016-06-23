@@ -33,40 +33,55 @@ shinyUI(dashboardPage(
   ),
   
   dashboardBody(
-    
     fluidRow(
-      box(
-        title = "URL Monitoring", 
-        status = "primary", 
-        strong(textOutput("url_monitoring")), 
-        height = 80,
-        width = 4
-      ),
-      box(
-        title = "Check Interval",
-        status = "primary",
-        strong(textOutput("checking_interval")),
-        height = 80,
-        width = 3
-      ),
-      # help the refresh button work
-      textOutput("refresh_setting_result"),
-      textOutput("refresh_data_result")
-    ),
-    
-    fluidRow(
+    column(1," "),
+    column(12,
+
+             tabBox( height = "150px",width = 12,
+                     tabPanel(tagList(shiny::icon("space-shuttle"),"Current Status"), 
+                                # Dynamic valueBoxes
+                                box(
+                                  title = "URL Monitoring", 
+                                  status = "primary", 
+                                  strong(textOutput("url_monitoring")), 
+                                  height = 80,
+                                  width = 4
+                                ),
+                                infoBoxOutput("url_working_or_not"),
+                                infoBoxOutput("respond_time")
+                              ),
+                     tabPanel(title = tagList(shiny::icon("gear"),"Information"), 
+                              # box(
+                              #   title = "URL Monitoring", 
+                              #   status = "primary", 
+                              #   strong(textOutput("url_monitoring")), 
+                              #   height = 80,
+                              #   width = 4
+                              # ),
+                              box(
+                                title = "Check Interval",
+                                status = "primary",
+                                strong(textOutput("checking_interval")),
+                                height = 80,
+                                width = 3
+                              ),
+                              # help the refresh button work
+                              textOutput("refresh_setting_result"),
+                              textOutput("refresh_data_result")
+                              ))
       
-      # Dynamic valueBoxes
-      infoBoxOutput("url_working_or_not"),
-      infoBoxOutput("respond_time")
     ),
+    column(1," ")
+    ),
+
     
     
     fluidRow(
       column(1," "),
       column(12,
       box(
-        title = "During the Last 100 Requests", status = "primary", solidHeader = TRUE, width=12,
+        title = tagList(shiny::icon("bar-chart"), "During the Last 100 Requests"), 
+        status = "primary", solidHeader = TRUE, width=12,
         infoBoxOutput("mean_past_100"),
         infoBoxOutput("max_past_100"),
         infoBoxOutput("min_past_100")
@@ -80,7 +95,8 @@ shinyUI(dashboardPage(
       column(1,"  "),
       column(12,
              box(
-               title = "Trend of Response Time", status = "primary", solidHeader = TRUE,
+               title = tagList(shiny::icon("area-chart"), "Trend of Response Time"), 
+               status = "primary", solidHeader = TRUE,
                collapsible = FALSE,
                plotlyOutput("trendPlot", height = 600),
                width = 12
