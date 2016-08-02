@@ -22,22 +22,30 @@ server <- function(input, output, sessin) {
     
     if(class(check_result) != "try-error"){
       temp_respond_time <- check_result$times['total']
-      print(temp_respond_time)
     } else {
       temp_respond_time <- 30
     }
     
-    temp <- data.frame(c(runif(temp_respond_time)))
-    names(temp) <- c("Response.Time")
+    temp <- data.frame(c(temp_respond_time))
+    names(temp) <- "Response.Time"
     row.names(temp) <- check_time
 
     assign('dat',  rbind(dat, temp), envir = envir_of_dat)
 
-    invalidateLater(1000*check_interval, session=getDefaultReactiveDomain())
-    
+    streaming_dat <- dat
+    if(dim(streaming_dat)[1] > 100){
+      streaming_dat <- tail(streaming_dat, 100)
+    }
     # re-plot
-    renderLineChart(div_id = "test", animation = FALSE,
+    renderLineChart(div_id = "streaming_sparkline", animation = FALSE, show.legend = FALSE,
+                    data = streaming_dat, line.width = 1, font.size.axis.x = 10, rotate.axis.x = 45)
+
+    renderLineChart(div_id = "historical_sparkline", animation = FALSE, show.legend = FALSE, theme = 'vintage',
                     data = dat, line.width = 1, font.size.axis.x = 10, rotate.axis.x = 45)
+
+
+
+    invalidateLater(1000*check_interval, session=getDefaultReactiveDomain())
   })
 
 
@@ -49,9 +57,13 @@ server <- function(input, output, sessin) {
 ui <- fluidPage(
   # We MUST load the ECharts javascript library in advance
   loadEChartsLibrary(),
+  loadEChartsTheme('vintage'),
 
-  tags$div(id="test", style="width:100%;height:400px;"),
-  deliverChart(div_id = "test")
+  tags$div(id="streaming_sparkline", style="width:100%;height:400px;"),
+  deliverChart(div_id = "streaming_sparkline"),
+
+  tags$div(id="historical_sparkline", style="width:100%;height:400px;"),
+  deliverChart(div_id = "historical_sparkline")
 )
 
 # Run the application --------------------------------------
